@@ -1,29 +1,24 @@
-<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/rootView"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical">
+<?xml version="1.0" encoding="utf-8"?>
 
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
 
-    <LinearLayout android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical">
-
-   <LinearLayout
+    <LinearLayout
        android:layout_width="wrap_content"
-       android:layout_height="wrap_content">
+       android:layout_height="wrap_content"
+       android:orientation="horizontal">
 
-    <ImageButton
+        <ImageButton
         android:layout_width="60dp"
         android:layout_height="55dp"
         android:id="@+id/imageButton"
-        android:layout_marginLeft="100dp"
+        android:layout_marginLeft="50dp"
         android:layout_marginTop="10dp"
         android:background="@drawable/cam" />
 
-    <ImageButton
+        <ImageButton
         android:layout_width="60dp"
         android:layout_height="55dp"
         android:layout_marginLeft="50dp"
@@ -31,19 +26,26 @@
         android:id="@+id/imageButton2"
         android:background="@drawable/gal" />
 
+        <ImageButton
+        android:layout_width="60dp"
+        android:layout_height="55dp"
+        android:layout_marginLeft="50dp"
+        android:layout_marginTop="10dp"
+        android:id="@+id/imageButtondat"
+        android:background="@drawable/dat" />
+
    </LinearLayout>
 
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-    <ImageView
+        <ImageView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:id="@+id/imageView"
-         />
+        android:id="@+id/imageView"/>
 
-    <ImageButton
+        <ImageButton
         android:layout_width="60dp"
         android:layout_height="60dp"
         android:layout_gravity="center"
@@ -55,10 +57,19 @@
         android:layout_marginBottom="30dp"
         android:visibility="invisible"/>
 
+        <ImageButton
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_gravity="center"
+        android:id="@+id/imageButton4"
+        android:background="@drawable/clear"
+        android:layout_marginLeft="30dp"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="30dp"
+        android:visibility="invisible"/>
+
     </RelativeLayout>
 
-    </LinearLayout>
+</LinearLayout>
 
 
-
-</android.support.design.widget.CoordinatorLayout>

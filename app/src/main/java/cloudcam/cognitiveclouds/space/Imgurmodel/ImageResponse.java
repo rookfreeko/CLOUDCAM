@@ -1,4 +1,4 @@
-package cloudcam.cognitiveclouds.space.rook.com.cloudcam;
+package cloudcam.cognitiveclouds.space.Imgurmodel;
 
 
 public class ImageResponse {

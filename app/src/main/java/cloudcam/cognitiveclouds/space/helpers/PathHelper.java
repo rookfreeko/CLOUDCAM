@@ -1,4 +1,4 @@
-package cloudcam.cognitiveclouds.space.rook.com.cloudcam;
+package cloudcam.cognitiveclouds.space.helpers;
 
 import android.content.ContentUris;
 import android.content.Context;

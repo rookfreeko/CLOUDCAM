@@ -1,4 +1,4 @@
-package cloudcam.cognitiveclouds.space.rook.com.cloudcam;
+package cloudcam.cognitiveclouds.space.helpers;
 
 import android.graphics.Bitmap;
 import android.util.Base64;

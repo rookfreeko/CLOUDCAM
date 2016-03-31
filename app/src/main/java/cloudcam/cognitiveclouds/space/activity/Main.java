@@ -1,4 +1,4 @@
-package cloudcam.cognitiveclouds.space.rook.com.cloudcam;
+package cloudcam.cognitiveclouds.space.activity;
 
 import android.Manifest;
 import android.app.Activity;
@@ -9,13 +9,14 @@ import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Toast;
@@ -27,6 +28,12 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+import cloudcam.cognitiveclouds.space.Imgurmodel.ImageResponse;
+import cloudcam.cognitiveclouds.space.Imgurmodel.ImgurAPI;
+import cloudcam.cognitiveclouds.space.R;
+import cloudcam.cognitiveclouds.space.helpers.DatabaseHelper;
+import cloudcam.cognitiveclouds.space.helpers.NotificationHelper;
+import cloudcam.cognitiveclouds.space.helpers.PathHelper;
 import retrofit.Callback;
 import retrofit.RestAdapter;
 import retrofit.RetrofitError;
@@ -39,24 +46,29 @@ import retrofit.mime.TypedFile;
 public class Main extends Activity {
 
     ImageButton cam,gal;
-    ImageButton up;
+    ImageButton up,clr,dat;
     ImageView prev;
     Uri filePath;
     int flag=0;
+    DatabaseHelper databaseHelper;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
         final boolean isM = Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP_MR1;
+        final Animation animScale = AnimationUtils.loadAnimation(this, R.anim.anim_scale);
 
         if (isM){
             checkperm();
         }
 
+        clr = (ImageButton) findViewById(R.id.imageButton4);
         cam = (ImageButton) findViewById(R.id.imageButton);
         cam.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                view.startAnimation(animScale);
                 clickpic();
             }
         });
@@ -65,7 +77,18 @@ public class Main extends Activity {
         gal.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                view.startAnimation(animScale);
                 galpic();
+            }
+        });
+
+        dat = (ImageButton) findViewById(R.id.imageButtondat);
+        dat.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                view.startAnimation(animScale);
+                Intent myIntent = new Intent(getApplicationContext(), Main2.class);
+                startActivity(myIntent);
             }
         });
 
@@ -73,6 +96,7 @@ public class Main extends Activity {
 
     }
 
+    //checks required permissions (ANROID M)
     public void checkperm(){
         int hascameraPermission = checkSelfPermission( Manifest.permission.CAMERA );
         int hasstoragePermission = checkSelfPermission( Manifest.permission.WRITE_EXTERNAL_STORAGE );
@@ -82,7 +106,7 @@ public class Main extends Activity {
 
         List<String> permissions = new ArrayList<String>();
         if( hascameraPermission != PackageManager.PERMISSION_GRANTED ) {
-            permissions.add( Manifest.permission.CAMERA );
+            permissions.add(Manifest.permission.CAMERA);
         }
         if( hasstoragePermission != PackageManager.PERMISSION_GRANTED ) {
             permissions.add( Manifest.permission.WRITE_EXTERNAL_STORAGE );
@@ -102,6 +126,7 @@ public class Main extends Activity {
         }
     }
 
+    //Permission result
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         switch ( requestCode ) {
@@ -121,6 +146,7 @@ public class Main extends Activity {
         }
     }
 
+    //intent to select a image from gallery
     public void galpic() {
         Intent intent = new Intent();
         intent.setType("image/*");
@@ -128,7 +154,7 @@ public class Main extends Activity {
         startActivityForResult(Intent.createChooser(intent, "Select Picture"), 1);
     }
 
-
+    //click a new image using camera
     public void clickpic(){
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         filePath = getOutputMediaFile();
@@ -138,6 +164,7 @@ public class Main extends Activity {
         startActivityForResult(intent, 100);
     }
 
+    //result of camera or gallery
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -165,6 +192,7 @@ public class Main extends Activity {
         }
     }
 
+    //creating a file for camera image
     public static Uri getOutputMediaFile() {
 
         // External sdcard location
@@ -187,6 +215,7 @@ public class Main extends Activity {
         return Uri.fromFile(mediaFile);
     }
 
+    //used to show selected image preview
     public void preview(final Bitmap bitmap){
 
         int i=1;
@@ -197,6 +226,16 @@ public class Main extends Activity {
         prev = (ImageView) findViewById(R.id.imageView);
         //scaleBitmap(bitmap,bitmap.getWidth()/3,bitmap.getHeight()/3);
         prev.setImageBitmap(scaleBitmap(bitmap,bitmap.getWidth()/i,bitmap.getHeight()/i));
+        clr.setVisibility(View.VISIBLE);
+        clr.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                up.setVisibility(View.INVISIBLE);
+                clr.setVisibility(View.GONE);
+                prev.setImageDrawable(null);
+                filePath = null;
+            }
+        });
 
         if(flag==0) {
             up.setVisibility(View.VISIBLE);
@@ -204,14 +243,18 @@ public class Main extends Activity {
         up.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if (filePath!=null){
                         up.setVisibility(View.INVISIBLE);
-                        (new UploadToImgurTask()).execute();
+                        UploadToImgurTask();
+                }else {
+                    Toast.makeText(getApplicationContext(), "No file Selected...",Toast.LENGTH_LONG).show();
+                }
             }
         });
 
     }
 
-
+    //initialize rest
     public RestAdapter buildRestAdapter() {
         RestAdapter imgurAdapter = new RestAdapter.Builder()
                 .setEndpoint(ImgurAPI.server)
@@ -219,7 +262,7 @@ public class Main extends Activity {
         return imgurAdapter;
     }
 
-
+    //scale bitmap incase it is very large
     public static Bitmap scaleBitmap(Bitmap bitmap, int newWidth, int newHeight) {
 
         Bitmap scaledBitmap = Bitmap.createBitmap(newWidth, newHeight, Bitmap.Config.ARGB_8888);
@@ -237,74 +280,57 @@ public class Main extends Activity {
         return scaledBitmap;
     }
 
-
-    class UploadToImgurTask extends AsyncTask<String, Void, Boolean>{
-
-
-        @Override
-        protected Boolean doInBackground(String... params) {
-            try{
-
-
-                flag=1;
-                final NotificationHelper notificationHelper = new NotificationHelper(getApplicationContext());
-                notificationHelper.createUploadingNotification();
-
-                File fileimg = new File(filePath.getPath());
-
-                RestAdapter restAdapter = buildRestAdapter();
-
-                restAdapter.create(ImgurAPI.class).postImage(
-                        "Client-ID 70a225e48cb701c",
-                        null,
-                        null,
-                        null,
-                        null,
-                        new TypedFile("image/*",fileimg ),
-                        new Callback<ImageResponse>(){
-
-                            @Override
-                            public void success(ImageResponse imageResponse, Response response) {
-
-                                if (response == null) {
-                            /*
-                             Notify image was NOT uploaded successfully
-
-                            */
-                                    Toast.makeText(getApplicationContext(), "failed to upload...",Toast.LENGTH_LONG).show();
-                                    notificationHelper.createFailedUploadNotification();
-                                    flag=0;
-                                    up.setVisibility(View.VISIBLE);
-                                    return;
-                                }
-                        /*
-                        Notify image was uploaded successfully
-                        */
-                                if (imageResponse.success) {
-
-                                    Toast.makeText(getApplicationContext(), "upload succes "+imageResponse.data.link,Toast.LENGTH_LONG).show();
-                                    flag=0;
-                                    up.setVisibility(View.VISIBLE);
-                                    notificationHelper.createUploadedNotification(imageResponse);
-                                }
-                            }
-                            @Override
-                            public void failure(RetrofitError error) {
-                                Toast.makeText(getApplicationContext(), "Retrofit error..."+error,Toast.LENGTH_LONG).show();
-                                notificationHelper.createFailedUploadNotification();
-                                flag=0;
-                                up.setVisibility(View.VISIBLE);
-                            }
-                        });
-
-                return true;
-            }catch (Exception e){
-                e.printStackTrace();
-            }
-            return false;
+    //check visiblity of the upload button
+    public void upvisiblity(){
+        if (filePath!=null) {
+            up.setVisibility(View.VISIBLE);
         }
-
-
-
     }
+
+
+    //upload image to the imgur server
+    public void UploadToImgurTask(){
+        flag=1;
+        final NotificationHelper notificationHelper = new NotificationHelper(getApplicationContext());
+        notificationHelper.createUploadingNotification();
+
+        databaseHelper = new DatabaseHelper(this);
+
+        File fileimg = new File(filePath.getPath());
+
+        RestAdapter restAdapter = buildRestAdapter();
+
+        restAdapter.create(ImgurAPI.class).postImage(
+                "Client-ID 70a225e48cb701c",
+                null,
+                null,
+                null,
+                null,
+                new TypedFile("image/*",fileimg),
+                new Callback<ImageResponse>(){
+
+                    @Override
+                    public void success(ImageResponse imageResponse, Response response) {
+                            /*
+                            Notify image was uploaded successfully
+                            */
+                        if (imageResponse.success) {
+
+                            Toast.makeText(getApplicationContext(), "upload succes "+imageResponse.data.link,Toast.LENGTH_LONG).show();
+                            flag=0;
+                            upvisiblity();
+                            notificationHelper.createUploadedNotification(imageResponse);
+                            databaseHelper.insertData("    : "+new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date()), imageResponse.data.link);
+                        }
+                    }
+                    @Override
+                    public void failure(RetrofitError error) {
+                        Toast.makeText(getApplicationContext(), "Retrofit error..."+error,Toast.LENGTH_LONG).show();
+                        notificationHelper.createFailedUploadNotification();
+                        flag=0;
+                        upvisiblity();
+                    }
+        });
+    }
+
 }
